@@ -32,10 +32,10 @@ A full-stack project that empowers citizens to report mangrove & coastal ecosyst
 
 ### IoT Monitoring Dashboard
 
-![IoT Dashboard](https://github.com/JatinKevlani/Generative-GenZ-Hackout25/blob/8be6a0961e20b97698275984fd9817120474ab81/image.png)
+![IoT Dashboard](https://github.com/JatinKevlani/Generative-GenZ-Hackout25/blob/main/assets/images/img1.png)
 
 ### IoT Hardware
-![IoT Hardware](https://github.com/JatinKevlani/Generative-GenZ-Hackout25/blob/8be6a0961e20b97698275984fd9817120474ab81/WhatsApp%20Image%202025-08-30%20at%205.10.29%20PM.jpeg)
+![IoT Hardware](https://github.com/JatinKevlani/Generative-GenZ-Hackout25/blob/main/assets/images/img2.jpeg)
 
 ---
 
