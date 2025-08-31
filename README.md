@@ -1,6 +1,105 @@
 ## Generative-GenZ-Hackout25
 Team Generative GenZ - Hackout'25
 
+# 🌱 BlueCarbon Citizen & IoT Monitoring Platform (Phase 2)
+
+A full-stack project that empowers citizens to report mangrove & coastal ecosystem data while integrating real-time IoT sensors for environmental monitoring. The platform now includes an **AI-driven validation model**, an **enhanced Flask-powered IoT smart dashboard**, and **Leaflet-based geospatial visualization** for richer insights.
+
+---
+
+## 🚀 Features
+
+### 1. Citizen Reporting Module
+
+* 📸 **Photo Uploads**: Citizens upload mangrove photos with descriptions & geotagging.
+* 🏆 **Leaderboard & Gamification**: Credits for verified uploads, progress tracking, and competition.
+* ✅ **AI + Admin Verification**: New AI model assists in verifying citizen reports.
+* 📊 **User Dashboard**: Contributions, trends, and recent reports with AI insights.
+
+### 2. IoT Sensor Node Module
+
+* **ESP32-based IoT Monitoring**: pH, salinity, turbidity, gas, and water level readings.
+* **Flask API Smart Dashboard**: Replaced FastAPI with Flask for interoperability & real-time analytics.
+* **Threshold Alerts**: System-generated alerts when environmental risks are detected.
+* **Live Interactive Dashboard**: Improved visualization with IoT sensor graphs & alerts.
+
+### 3. Interactive Mapping (New)
+
+* 🗺️ **Leaflet Integration**: Interactive map showing geotagged citizen reports and IoT nodes.
+* 🔍 **Data Overlay**: View hotspots of citizen activity vs IoT sensor readings.
+* 📡 **Geo-Insights**: Enables better correlation between human reports and real-time sensor data.
+
+---
+
+## 🖥️ Screenshots
+
+### Citizen Reporting + AI Insights
+
+![Citizen + AI Dashboard](https://github.com/JatinKevlani/Generative-GenZ-Hackout25/blob/3a34f101e6552bd6356120274d8caaa7c4608689/assets/images/img4.jpg)
+
+### IoT Smart Dashboard + Maps
+
+![IoT + Map Dashboard](https://github.com/JatinKevlani/Generative-GenZ-Hackout25/blob/3a34f101e6552bd6356120274d8caaa7c4608689/assets/images/img3.jpg)
+
+---
+
+## ⚙️ Tech Stack
+
+* **Frontend:** Next.js, TailwindCSS, shadcn/ui, Leaflet.js
+* **Backend:** Node.js/Express (Citizen Reports), Flask API (IoT Smart Dashboard)
+* **Database:** MongoDB / PostgreSQL
+* **AI Model:** Image/Report verification model (custom fine-tuned)
+* **IoT Hardware:** ESP32, Water Level, Gas, pH, Salinity, Turbidity sensors
+* **APIs:** REST APIs for uploads, AI validation, IoT data ingestion
+
+---
+
+## 📊 Data Flow
+
+1. **Citizen Reports →** AI + Admin Verification → Stored in DB → Leaderboard + Map.
+2. **IoT Sensor Data →** ESP32 → Flask API → Smart Dashboard + Map overlay.
+3. **Correlation →** AI insights + Sensor validation + Citizen reports = **trusted eco-data**.
+
+---
+
+## 📚 Resources
+
+* Storyboards & sample uploads (`/docs`).
+* Placeholder simulated IoT + AI outputs for demo.
+* Updated PPT with **AI + Flask + Map integration**.
+
+---
+
+## 🌍 Why Phase 2 Matters
+
+* **AI Validation** → improves credibility of citizen-science.
+* **Flask Smart Dashboard** → modular, easy to extend, better real-time IoT support.
+* **Leaflet Mapping** → adds geospatial context, making the platform more engaging.
+
+---
+
+## 👥 Team
+
+* **Frontend:** Citizen UI, IoT Smart Dashboard, Maps
+* **Backend:** Flask IoT API, AI Model Integration
+* **Hardware:** ESP32 Firmware + Sensors
+* **Design & Docs:** Storyboards, Presentation, Data Flow
+
+---
+
+## 📌 Next Steps
+
+* Expand AI to classify mangrove health & species.
+* Add predictive analytics (sensor + citizen data trends).
+* Scale IoT coverage with mesh networks.
+* Mobile-first PWA for on-the-go citizen uploads.
+
+---
+
+⚡ Would you like me to also make a **visual architecture diagram** (citizen app + AI + IoT + maps) so it looks polished for the README?
+
+
+
 # 🌱 BlueCarbon Citizen & IoT Monitoring Platform
 
 A full-stack project that empowers citizens to report mangrove & coastal ecosystem data while integrating real-time IoT sensors for environmental monitoring. The platform combines **crowdsourced citizen science** with **IoT-based validation**, driving data-backed conservation insights.
