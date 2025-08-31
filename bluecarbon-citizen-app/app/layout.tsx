@@ -3,10 +3,11 @@ import { Metadata, Viewport } from "next";
 import { Link } from "@heroui/link";
 import clsx from "clsx";
 
-import { Providers } from "./providers";
 
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
+import { Navbar } from "@/components/navbar";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: {
@@ -24,10 +25,6 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: light)", color: "white" },
     { media: "(prefers-color-scheme: dark)", color: "black" },
   ],
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 export default function RootLayout({
@@ -44,10 +41,9 @@ export default function RootLayout({
           fontSans.variable,
         )}
       >
-        <Providers themeProps={{ attribute: "class", defaultTheme: "light" }}>
-          <div className="relative flex flex-col min-h-screen">
-            {/* Main content area - no container constraints for mobile */}
-            <main className="flex-1 w-full overflow-x-hidden">
+        <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
+          <div className="relative h-screen">
+            <main className="mx-auto">
               {children}
             </main>
           </div>

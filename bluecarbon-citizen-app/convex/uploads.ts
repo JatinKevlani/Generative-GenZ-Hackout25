@@ -8,6 +8,7 @@ export const create = mutation({
     description: v.optional(v.string()),
     latitude: v.optional(v.number()),
     longitude: v.optional(v.number()),
+    intensity: v.optional(v.string()),
     imageStorageId: v.id("_storage"), // required if uploading
   },
   handler: async (ctx, args) => {
@@ -17,6 +18,7 @@ export const create = mutation({
       description: args.description,
       latitude: args.latitude,
       longitude: args.longitude,
+      intensity: args.intensity || "medium",
       imageStorageId: args.imageStorageId,
       status: "pending",
       creditsEarned: 50, // Default credits
@@ -106,5 +108,17 @@ export const verify = mutation({
 
     // Return updated upload
     return { ...upload, status: newStatus };
+  },
+});
+
+
+export const getForMap = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("uploads")
+      // .filter((q) => q.eq(q.field("status"), "verified"))
+      .order("desc")
+      .take(100); // Get last 100 verified uploads for map
   },
 });

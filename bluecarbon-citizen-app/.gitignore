@@ -25,7 +25,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*.local
+.env*
 
 # vercel
 .vercel
@@ -38,3 +38,18 @@ pnpm-lock.yaml
 yarn.lock
 package-lock.json
 bun.lockb
+context.txt
+local/*
+outputs/
+uploads/
+!outputs/.gitkeep
+!uploads/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/

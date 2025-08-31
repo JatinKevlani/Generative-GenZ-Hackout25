@@ -21,7 +21,7 @@ export default defineSchema({
     description: v.optional(v.string()),
     latitude: v.optional(v.number()),
     longitude: v.optional(v.number()),
-    // imageUrl: v.string(),
+    intensity: v.optional(v.string()),
     imageStorageId: v.optional(v.id("_storage")),
     status: v.union(v.literal("pending"), v.literal("verified"), v.literal("rejected")),
     creditsEarned: v.number(),

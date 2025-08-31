@@ -20,16 +20,18 @@ declare module "@react-types/shared" {
     >;
   }
 }
+
 const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+
 
 export function Providers({ children, themeProps }: ProvidersProps) {
   const router = useRouter();
 
   return (
     <ConvexProvider client={convex}>
-      <HeroUIProvider navigate={router.push}>
-        <NextThemesProvider {...themeProps}>{children}</NextThemesProvider>
-      </HeroUIProvider>
+    <HeroUIProvider navigate={router.push}>
+      <NextThemesProvider {...themeProps}>{children}</NextThemesProvider>
+    </HeroUIProvider>
     </ConvexProvider>
   );
 }
