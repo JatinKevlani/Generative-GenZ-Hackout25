@@ -9,6 +9,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class SegmentationModel:
     """
     Handles image segmentation using Roboflow model.
@@ -30,11 +31,37 @@ class SegmentationModel:
 
         # Mask annotator (label annotator is recreated dynamically per image)
         self.mask_annotator = sv.MaskAnnotator(
-            color=sv.ColorPalette.DEFAULT,
-            opacity=0.5
+            color=sv.ColorPalette.DEFAULT, opacity=0.5
         )
 
         logger.info("Segmentation model initialized successfully")
+
+    def get_model_info(self):
+        """
+        Get information about the loaded model.
+        """
+        try:
+            return {
+                "status": "loaded",
+                "workspace": self.project.workspace.name
+                if hasattr(self.project, "workspace")
+                else "unknown",
+                "project": self.project.name
+                if hasattr(self.project, "name")
+                else "segmentation-sohpz",
+                "version": "9",
+                "model_type": "segmentation",
+                "api_key_status": "configured" if self.api_key else "missing",
+                "classes": ["grass"],  # Add your actual classes here
+                "timestamp": datetime.now().isoformat(),
+            }
+        except Exception as e:
+            logger.error(f"Error getting model info: {str(e)}")
+            return {
+                "status": "error",
+                "error": str(e),
+                "timestamp": datetime.now().isoformat(),
+            }
 
     def classify_grass_health(self, mask, img):
         """
@@ -77,7 +104,7 @@ class SegmentationModel:
             label_annotator = sv.LabelAnnotator(
                 text_scale=text_scale,
                 text_thickness=text_thickness,
-                text_padding=text_padding
+                text_padding=text_padding,
             )
 
             # Build labels (add stress detection for grass)
@@ -85,14 +112,18 @@ class SegmentationModel:
             safe_boxes = []
 
             # Estimate label height (adjust multiplier if needed)
-            label_height = int((text_scale * 20) + text_padding * 2 + text_thickness * 2)
+            label_height = int(
+                (text_scale * 20) + text_padding * 2 + text_thickness * 2
+            )
 
             for i, pred in enumerate(result["predictions"]):
                 class_name = pred["class"]
                 label = f"{class_name}"
 
                 if class_name.lower() == "grass" and "points" in pred:
-                    points = np.array([[p["x"], p["y"]] for p in pred["points"]], dtype=np.int32)
+                    points = np.array(
+                        [[p["x"], p["y"]] for p in pred["points"]], dtype=np.int32
+                    )
                     mask = np.zeros(image.shape[:2], dtype=np.uint8)
                     cv2.fillPoly(mask, [points], 255)
 
@@ -106,7 +137,9 @@ class SegmentationModel:
 
                 # Clamp inside image and ensure enough space for label
                 x1 = max(0, min(int(x1), w - 1))
-                y1 = max(label_height, min(int(y1), h - 1))  # Ensure enough space for label
+                y1 = max(
+                    label_height, min(int(y1), h - 1)
+                )  # Ensure enough space for label
                 x2 = max(0, min(int(x2), w - 1))
                 y2 = max(0, min(int(y2), h - 1))
 
@@ -121,8 +154,12 @@ class SegmentationModel:
             )
 
             # Apply annotations
-            annotated_image = self.mask_annotator.annotate(scene=image, detections=detections)
-            annotated_image = label_annotator.annotate(scene=annotated_image, detections=detections, labels=labels)
+            annotated_image = self.mask_annotator.annotate(
+                scene=image, detections=detections
+            )
+            annotated_image = label_annotator.annotate(
+                scene=annotated_image, detections=detections, labels=labels
+            )
 
             # Generate output filename
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -140,7 +177,7 @@ class SegmentationModel:
                 "annotated_image_path": output_path,
                 "raw_predictions": result["predictions"],
                 "confidence_threshold": confidence,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
 
         except Exception as e:
