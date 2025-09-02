@@ -1,7 +1,7 @@
 // File: app/api/flask-proxy/[...path]/route.ts
 // Catch-all proxy for Flask API
 
-const FLASK_BASE = "http://localhost:5000";
+const FLASK_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
 export async function GET(req: Request, props: { params: Promise<{ path: string[] }> }) {
   const params = await props.params;
