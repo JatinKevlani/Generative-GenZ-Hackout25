@@ -1,8 +1,10 @@
+import os
 import serial
 import json
 import time
 import threading
 import logging
+import random
 from datetime import datetime
 from collections import deque
 import serial.tools.list_ports
@@ -16,21 +18,52 @@ class BlueGuardIoT:
     """
     
     def __init__(self, port=None, baudrate=9600, data_history_size=100):
-        """
-        Initialize IoT controller.
+        """Initialize IoT controller with mock mode support."""
+        self.mock_mode = os.getenv('RENDER', 'false').lower() == 'true'
         
-        Args:
-            port (str): Serial port (auto-detected if None)
-            baudrate (int): Serial communication speed
-            data_history_size (int): Number of readings to keep in history
-        """
+        if self.mock_mode:
+            logger.info("IoT Module running in MOCK MODE for web deployment")
+            self._init_mock_mode(data_history_size)
+        else:
+            logger.info("IoT Module running in REAL MODE for hardware")
+            self._init_real_mode(port, baudrate, data_history_size)
+    
+    def _init_mock_mode(self, data_history_size):
+        """Initialize mock mode settings."""
+        self.port = "MOCK_PORT"
+        self.baudrate = 9600
+        self.serial_connection = None
+        self.is_connected = True  # Always "connected" in mock mode
+        self.is_monitoring = False
+        
+        # Mock data storage
+        self.current_data = {
+            "h2_conc": random.randint(50, 150),
+            "h2_alert": 0,
+            "water_cm": random.randint(15, 50),
+            "servo_pos": 90,
+            "timestamp": datetime.now().isoformat(),
+            "status": "mock_connected",
+            "mock_data": True
+        }
+        
+        self.data_history = deque(maxlen=data_history_size)
+        self.gas_threshold = 100
+        self.water_critical_level = 10
+        self.monitor_thread = None
+        self.stop_monitoring = threading.Event()
+        
+        # Pre-populate some mock history
+        self._generate_mock_history(20)
+    
+    def _init_real_mode(self, port, baudrate, data_history_size):
+        """Initialize real hardware mode settings."""
         self.port = port
         self.baudrate = baudrate
         self.serial_connection = None
         self.is_connected = False
         self.is_monitoring = False
         
-        # Data storage
         self.current_data = {
             "h2_conc": 0,
             "h2_alert": 0,
@@ -40,21 +73,33 @@ class BlueGuardIoT:
             "status": "disconnected"
         }
         
-        # Historical data (last N readings)
         self.data_history = deque(maxlen=data_history_size)
-        
-        # Thresholds and settings
         self.gas_threshold = 100
-        self.water_critical_level = 10  # cm
-        
-        # Monitoring thread
+        self.water_critical_level = 10
         self.monitor_thread = None
         self.stop_monitoring = threading.Event()
-        
-        logger.info("BlueGuard IoT module initialized")
+    
+    def _generate_mock_history(self, count):
+        """Generate realistic mock historical data."""
+        for i in range(count):
+            timestamp = datetime.now().timestamp() - (count - i) * 5  # 5 seconds apart
+            mock_data = {
+                "h2_conc": random.randint(30, 200),
+                "h2_alert": 1 if random.random() < 0.1 else 0,  # 10% chance of alert
+                "water_cm": random.randint(10, 60),
+                "servo_pos": random.choice([0, 45, 90, 135, 180]),
+                "timestamp": datetime.fromtimestamp(timestamp).isoformat(),
+                "status": "mock_connected",
+                "mock_data": True
+            }
+            mock_data["h2_alert"] = 1 if mock_data["h2_conc"] > self.gas_threshold else 0
+            self.data_history.append(mock_data)
     
     def find_arduino_port(self):
         """Auto-detect Arduino port."""
+        if self.mock_mode:
+            return "MOCK_PORT"
+        
         ports = serial.tools.list_ports.comports()
         for port in ports:
             if 'Arduino' in port.description or 'CH340' in port.description or 'USB' in port.description:
@@ -62,15 +107,14 @@ class BlueGuardIoT:
         return None
     
     def connect(self, port=None):
-        """
-        Connect to Arduino via serial.
+        """Connect to Arduino (or simulate connection in mock mode)."""
+        if self.mock_mode:
+            self.is_connected = True
+            self.current_data["status"] = "mock_connected"
+            logger.info("Mock connection established")
+            return True
         
-        Args:
-            port (str): Serial port (auto-detected if None)
-            
-        Returns:
-            bool: Connection success status
-        """
+        # Real hardware connection logic
         try:
             if port:
                 self.port = port
@@ -80,18 +124,11 @@ class BlueGuardIoT:
             if not self.port:
                 raise Exception("No Arduino port found. Please specify port manually.")
             
-            self.serial_connection = serial.Serial(
-                self.port, 
-                self.baudrate, 
-                timeout=2
-            )
-            
-            # Wait for Arduino to initialize
-            time.sleep(2)
+            self.serial_connection = serial.Serial(self.port, self.baudrate, timeout=2)
+            time.sleep(2)  # Arduino initialization
             
             self.is_connected = True
             self.current_data["status"] = "connected"
-            
             logger.info(f"Connected to Arduino on port {self.port}")
             return True
             
@@ -103,6 +140,12 @@ class BlueGuardIoT:
     
     def disconnect(self):
         """Disconnect from Arduino."""
+        if self.mock_mode:
+            self.is_connected = False
+            self.current_data["status"] = "mock_disconnected"
+            logger.info("Mock disconnection")
+            return
+        
         try:
             self.stop_monitoring_data()
             if self.serial_connection and self.serial_connection.is_open:
@@ -114,53 +157,49 @@ class BlueGuardIoT:
             logger.error(f"Error during disconnect: {str(e)}")
     
     def read_single_data(self):
-        """
-        Read a single data point from Arduino.
+        """Read sensor data (mock or real)."""
+        if self.mock_mode:
+            # Generate realistic mock data
+            h2_conc = random.randint(20, 300)
+            h2_alert = 1 if h2_conc > self.gas_threshold else 0
+            water_cm = random.randint(5, 80)
+            
+            mock_data = {
+                "h2_conc": h2_conc,
+                "h2_alert": h2_alert,
+                "water_cm": water_cm,
+                "servo_pos": random.choice([0, 45, 90, 135, 180]),
+                "timestamp": datetime.now().isoformat(),
+                "status": "mock_connected",
+                "mock_data": True
+            }
+            
+            self.current_data.update(mock_data)
+            return mock_data
         
-        Returns:
-            dict: Latest sensor data or None if failed
-        """
+        # Real hardware reading logic
         if not self.is_connected or not self.serial_connection:
             return None
         
         try:
-            # Clear buffer
-            self.serial_connection.flushInput()
-            
-            # Wait for JSON data
-            start_time = time.time()
-            while time.time() - start_time < 10:  # 10 second timeout
-                if self.serial_connection.in_waiting > 0:
-                    line = self.serial_connection.readline().decode('utf-8').strip()
-                    if line.startswith('{') and line.endswith('}'):
-                        data = json.loads(line)
-                        data["timestamp"] = datetime.now().isoformat()
-                        data["status"] = "active"
-                        
-                        # Add derived information
-                        data["h2_status"] = "LEAK DETECTED" if data["h2_alert"] else "Safe"
-                        data["water_status"] = "CRITICAL" if data["water_cm"] < self.water_critical_level else "Normal"
-                        data["servo_status"] = "Open" if data["servo_pos"] > 0 else "Closed"
-                        
-                        self.current_data = data
-                        return data
-                
-                time.sleep(0.1)
-            
-            raise Exception("Timeout waiting for data from Arduino")
-            
+            if self.serial_connection.in_waiting > 0:
+                line = self.serial_connection.readline().decode().strip()
+                data = json.loads(line)
+                data["timestamp"] = datetime.now().isoformat()
+                data["status"] = "connected"
+                self.current_data.update(data)
+                return data
         except Exception as e:
-            logger.error(f"Error reading data: {str(e)}")
-            self.current_data["status"] = f"read_error: {str(e)}"
+            logger.error(f"Error reading from Arduino: {str(e)}")
             return None
     
     def start_monitoring(self):
-        """Start continuous monitoring in background thread."""
+        """Start continuous monitoring."""
         if self.is_monitoring:
             return True
         
         if not self.is_connected:
-            logger.error("Cannot start monitoring - not connected to Arduino")
+            logger.error("Cannot start monitoring - not connected")
             return False
         
         self.stop_monitoring.clear()
@@ -187,7 +226,7 @@ class BlueGuardIoT:
                 data = self.read_single_data()
                 if data:
                     self.data_history.append(data)
-                time.sleep(1)  # Match Arduino's 5-second interval
+                time.sleep(5 if not self.mock_mode else 2)  # Faster updates in mock mode
             except Exception as e:
                 logger.error(f"Error in monitoring loop: {str(e)}")
                 time.sleep(5)
@@ -197,15 +236,7 @@ class BlueGuardIoT:
         return self.current_data.copy()
     
     def get_historical_data(self, limit=None):
-        """
-        Get historical sensor data.
-        
-        Args:
-            limit (int): Maximum number of records to return
-            
-        Returns:
-            list: Historical data points
-        """
+        """Get historical sensor data."""
         history = list(self.data_history)
         if limit:
             history = history[-limit:]
@@ -214,25 +245,21 @@ class BlueGuardIoT:
     def get_system_status(self):
         """Get comprehensive system status."""
         return {
-            "connection": {
-                "is_connected": self.is_connected,
-                "port": self.port,
-                "status": self.current_data.get("status", "unknown")
-            },
-            "monitoring": {
-                "is_active": self.is_monitoring,
-                "data_points_collected": len(self.data_history)
-            },
-            "current_readings": self.current_data,
+            "connected": self.is_connected,
+            "port": self.port,
+            "status": self.current_data.get("status", "unknown"),
+            "monitoring": self.is_monitoring,
+            "mock_mode": self.mock_mode,
+            "data_points_collected": len(self.data_history),
+            "last_reading": self.current_data.get("timestamp"),
             "thresholds": {
                 "gas_threshold": self.gas_threshold,
                 "water_critical_level": self.water_critical_level
-            },
-            "alerts": self.get_active_alerts()
+            }
         }
     
     def get_active_alerts(self):
-        """Get list of active alerts based on current readings."""
+        """Get list of active alerts."""
         alerts = []
         
         if self.current_data.get("h2_alert", 0) == 1:
@@ -240,7 +267,8 @@ class BlueGuardIoT:
                 "type": "gas_leak",
                 "severity": "critical",
                 "message": f"Hydrogen leak detected! Concentration: {self.current_data.get('h2_conc', 0)}",
-                "timestamp": self.current_data.get("timestamp")
+                "timestamp": self.current_data.get("timestamp"),
+                "mock": self.mock_mode
             })
         
         if self.current_data.get("water_cm", 100) < self.water_critical_level:
@@ -248,19 +276,14 @@ class BlueGuardIoT:
                 "type": "water_level",
                 "severity": "warning",
                 "message": f"Low water level: {self.current_data.get('water_cm', 0)} cm",
-                "timestamp": self.current_data.get("timestamp")
+                "timestamp": self.current_data.get("timestamp"),
+                "mock": self.mock_mode
             })
         
         return alerts
     
     def update_thresholds(self, gas_threshold=None, water_critical_level=None):
-        """
-        Update system thresholds.
-        
-        Args:
-            gas_threshold (int): Gas detection threshold
-            water_critical_level (float): Critical water level in cm
-        """
+        """Update system thresholds."""
         if gas_threshold is not None:
             self.gas_threshold = gas_threshold
         if water_critical_level is not None:
@@ -271,7 +294,10 @@ class BlueGuardIoT:
     def get_analytics(self):
         """Get analytics from historical data."""
         if not self.data_history:
-            return {"message": "No historical data available"}
+            return {
+                "message": "No historical data available",
+                "mock_mode": self.mock_mode
+            }
         
         history = list(self.data_history)
         
@@ -282,13 +308,13 @@ class BlueGuardIoT:
         # Count alerts
         total_alerts = sum(d.get("h2_alert", 0) for d in history)
         
-        # Get recent trends
+        # Get recent trends (last 10 readings)
         recent_data = history[-10:] if len(history) >= 10 else history
         recent_avg_h2 = sum(d.get("h2_conc", 0) for d in recent_data) / len(recent_data)
         
         return {
             "data_points": len(history),
-            "time_span_hours": len(history) * 1 / 3600,  # 1 seconds per reading
+            "time_span_minutes": len(history) * (5 if not self.mock_mode else 2) / 60,
             "averages": {
                 "h2_concentration": round(avg_h2, 2),
                 "water_level_cm": round(avg_water, 2)
@@ -299,11 +325,18 @@ class BlueGuardIoT:
             },
             "trends": {
                 "recent_avg_h2": round(recent_avg_h2, 2),
-                "trend": "increasing" if recent_avg_h2 > avg_h2 else "stable"
-            }
+                "trend": "increasing" if recent_avg_h2 > avg_h2 else "decreasing" if recent_avg_h2 < avg_h2 else "stable"
+            },
+            "mock_mode": self.mock_mode
         }
     
     def get_available_ports(self):
         """Get list of available serial ports."""
+        if self.mock_mode:
+            return [
+                {"port": "MOCK_PORT", "description": "Mock Arduino Device"},
+                {"port": "COM_MOCK", "description": "Simulated COM Port"}
+            ]
+        
         ports = serial.tools.list_ports.comports()
         return [{"port": port.device, "description": port.description} for port in ports]

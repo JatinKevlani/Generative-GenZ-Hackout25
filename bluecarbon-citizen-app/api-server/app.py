@@ -6,7 +6,10 @@ from datetime import datetime
 import uuid
 from segmentation_module import SegmentationModel
 from iot_module import BlueGuardIoT
+from dotenv import load_dotenv
 import logging
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -14,15 +17,57 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# Enable CORS for all routes
-CORS(app, origins=["http://localhost:3000", "http://127.0.0.1:3000"])
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # api-server/
-OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
-UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
-# Configuration
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+# Environment detection
+# Environment detection
+IS_RENDER = os.getenv('RENDER', 'false').lower() == 'true'
+FRONTEND_URL = os.getenv('FRONTEND_URL', '')
+
+# CORS Configuration - Allow both local and production frontends
+if IS_RENDER:
+    # On Render - allow both your production frontend AND local development
+    allowed_origins = [
+        FRONTEND_URL,  # Your production frontend
+        "http://localhost:3000",  # Local React dev server
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",  # Local Vite dev server
+        "http://127.0.0.1:5173",
+        "http://localhost:3001",  # Alternative local ports
+        "http://127.0.0.1:3001"
+    ]
+    # Remove empty strings
+    allowed_origins = [origin for origin in allowed_origins if origin]
+else:
+    # Local development - API and frontend both local
+    allowed_origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+    ]
+
+print(f"CORS allowed origins: {allowed_origins}")
+
+CORS(app, 
+    origins=allowed_origins,
+    methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allow_headers=['Content-Type', 'Authorization'],
+    supports_credentials=True  # If you need cookies/auth
+)
+# File storage configuration for Render
+if IS_RENDER:
+    # On Render, use /tmp for temporary files
+    BASE_DIR = "/tmp"
+    OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
+    UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+else:
+    # Local development
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
+    UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+
 app.config['UPLOAD_FOLDER'] = UPLOAD_DIR
 app.config['OUTPUT_FOLDER'] = OUTPUT_DIR
+
 
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff'}
@@ -422,4 +467,9 @@ def dashboard_summary():
         return jsonify({"error": f"Failed to get dashboard summary: {str(e)}"}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    if IS_RENDER:
+        # Production on Render
+        app.run(host='0.0.0.0')
+    else:
+        # Local development
+        app.run(debug=True, host='0.0.0.0', port=5000)

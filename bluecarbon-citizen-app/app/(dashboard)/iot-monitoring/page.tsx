@@ -87,9 +87,7 @@ const IoTDashboard: React.FC = () => {
   const [waterCriticalLevel, setWaterCriticalLevel] = useState<number>(10);
   const [autoRefresh, setAutoRefresh] = useState<boolean>(false);
 
-  const API_BASE_URL = process.env.NODE_ENV === 'production'
-    ? 'https://your-api-domain.com'
-    : 'http://localhost:5000';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
 
   // Auto-refresh effect
   useEffect(() => {

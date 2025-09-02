@@ -53,9 +53,7 @@ const ImageSegmentationPage: React.FC = () => {
   // Constants
   const ALLOWED_TYPES: string[] = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp'];
   const MAX_FILE_SIZE: number = 16 * 1024 * 1024; // 16MB
-  const API_BASE_URL: string = process.env.NODE_ENV === 'production'
-    ? 'https://your-api-domain.com'
-    : 'http://localhost:5000';
+  const API_BASE_URL: string = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
 
   const handleFileSelect = (event: ChangeEvent<HTMLInputElement>): void => {
     const file = event.target.files?.[0];

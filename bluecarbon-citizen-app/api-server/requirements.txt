@@ -1,9 +1,12 @@
-Flask
 Flask-CORS
+Werkzeug
+python-dotenv
 roboflow
 supervision
-opencv-python
-python-dotenv
-Werkzeug
-gunicorn
+opencv-python-headless
+numpy
+Pillow
 pyserial
+logging
+uuid
+datetime
